@@ -230,14 +230,14 @@ commitHistoryFirstParent c =
 commitEntry :: Commit -> FilePath -> IO (Maybe TreeEntry)
 commitEntry c path = flip lookupTreeEntry path =<< loadObject' (commitTree c) c
 
-identifyEntry :: TreeEntry -> IO (Oid,TreeEntry)
-identifyEntry x = do
+identifyEntry :: Commit -> TreeEntry -> IO (Oid,(Commit,TreeEntry))
+identifyEntry co x = do
   oid <- case x of
           BlobEntry blob _ -> objectRefId blob
           TreeEntry tree   -> objectRefId tree
-  return (oid,x)
+  return (oid,(co,x))
 
-commitEntryHistory :: Commit -> FilePath -> IO [(Oid,TreeEntry)]
+commitEntryHistory :: Commit -> FilePath -> IO [(Oid,(Commit,TreeEntry))]
 commitEntryHistory c path = map head
                             . filter (not . null)
                             . groupBy ((==) `on` fst) <$> go c
@@ -252,6 +252,6 @@ commitEntryHistory c path = map head
           ce <- commitEntry co path
           case ce of
             Nothing  -> return Nothing
-            Just ce' -> Just <$> identifyEntry ce'
+            Just ce' -> Just <$> identifyEntry co ce'
 
 -- Commit.hs
